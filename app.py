@@ -13,47 +13,36 @@ def calculate_odds(white_balls, powerball):
         return None, None, None
 
     odds_table = []
-    match_counts = [(5, True), (5, False), (4, True), (4, False), (3, True), (3, False), (2, True), (1, True), (0, True)]
-    prize_values = ["Jackpot", "$1,000,000", "$50,000", "$100", "$100", "$7", "$7", "$4", "$4"]
-    odds_values = [292201338, 11688053.52, 913129.18, 36525.17, 14494.11, 579.76, 701.33, 91.98, 38.32]
+    match_counts = [(5, True), (5, False), (4, True), (4, False), (3, True), (3, False), (2, True),
+                    (1, True), (0, True), (3, False), (2, False), (1, False), (0, False)]
+    prize_values = ["Jackpot", "$1,000,000", "$50,000", "$100", "$100", "$7", "$7",
+                    "$4", "$4", "$7", "$4", "$0", "$0"]
+    odds_values = [292201338, 11688053.52, 913129.18, 36525.17, 14494.11, 579.76, 701.33,
+                   91.98, 38.32, 701.33, 579.76, 91.98, 38.32]
 
     for (match, pb), prize, odds in zip(match_counts, prize_values, odds_values):
         friendly = f"1 in {int(odds):,} ({round(1/odds*100, 8)}%)"
-        if int(odds) == 292201338:
-            friendly += " – National Powerball Jackpot Odds: virtually zero chance of winning"
+        if round(1/odds*100, 8) < 0.000001:
+            friendly = "Virtually zero (not a winning combo)"
+        elif round(1/odds*100, 8) >= 99:
+            friendly = f"Highly Likely ({round(1/odds*100, 2)}%)"
         odds_table.append({
             "White Balls Matched": match,
             "Powerball Matched": "Yes" if pb else "No",
             "Prize": prize,
             "Odds": friendly
         })
-
-    # Match user input with match_counts
-    matched_white = len(set(white_balls).intersection(set(user_draws)))
-    matched_powerball = user_pb == powerball
-    result = next((entry for entry in odds_table if entry["White Balls Matched"] == matched_white and
-                   ((entry["Powerball Matched"] == "Yes") == matched_powerball)), None)
-
-    return odds_table, result["White Balls Matched"] if result else None, result["Prize"] if result else None
+    return odds_table
 
 if st.button("Calculate Winning Odds"):
     try:
-        user_draws = [int(x.strip()) for x in white_balls_input.split(",") if x.strip().isdigit()]
-        user_pb = int(powerball_input)
-
-        odds_table, matched_white, prize = calculate_odds(user_draws, user_pb)
-
-        if odds_table is not None:
-            st.subheader("Odds Table")
-            st.table(pd.DataFrame(odds_table))
-
-            if prize == "Jackpot":
-                st.success("🎉 Congratulations! You’ve hit the Jackpot (hypothetically)!")
-            elif prize:
-                st.info(f"🎯 You matched with prize: {prize}")
-            else:
-                st.warning("🚫 Not a winning combination. Basically zero chance of winning.")
+        white_balls = list(map(int, white_balls_input.split(",")))
+        odds_table = calculate_odds(white_balls, powerball_input)
+        if odds_table:
+            df = pd.DataFrame(odds_table)
+            st.markdown("### Winning Odds Breakdown")
+            st.dataframe(df, use_container_width=True)
         else:
-            st.error("❗ Invalid numbers. Please enter 5 unique white balls from 1–69.")
-    except Exception as e:
-        st.error(f"❗ Error: {str(e)}")
+            st.error("Invalid input. Please enter 5 unique white balls between 1 and 69.")
+    except:
+        st.error("Invalid input format. Please enter 5 numbers separated by commas.")
