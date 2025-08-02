@@ -1,2 +1,1 @@
-# Powerball-predictor
-Powerball calculator 
+Powerball App - Displays friendly odds for selected number combinations
