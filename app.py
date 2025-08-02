@@ -3,7 +3,7 @@ import streamlit as st
 import pandas as pd
 
 st.set_page_config(page_title="Chaos Powerball Predictor", layout="wide")
-st.title("🎲 Chaos-Based Powerball Predictor (Friendly Odds)")
+st.title("🎯 Chaos Powerball Predictor")
 
 st.markdown("""
 Welcome to the Powerball Predictor app. This tool provides:
@@ -13,52 +13,35 @@ Welcome to the Powerball Predictor app. This tool provides:
 - Layman-friendly odds output
 """)
 
-# 1. Winning Odds Table
-odds_data = {
-    "Match Type": [
-        "Match Powerball only",
-        "Match 1 white ball + Powerball",
-        "Match 2 white balls + Powerball",
-        "Match 3 white balls",
-        "Match 3 white + Powerball",
-        "Match 4 white balls",
-        "Match 4 white + Powerball",
-        "Match 5 white balls only",
-        "Match 5 white + Powerball"
-    ],
-    "Prize": ["$4", "$4", "$7", "$7", "$100", "$100", "$50,000", "$1 million", "Jackpot"],
-    "Odds (1 in X)": [
-        "1 in 26", "1 in 92", "1 in 701", "1 in 579", "1 in 14,494", 
-        "1 in 36,525", "1 in 913,129", "1 in 11,688,053", "1 in 292,201,338"
-    ],
-    "Percentage": [
-        "3.85%", "1.09%", "0.14%", "0.17%", "0.0069%", 
-        "0.0027%", "0.00011%", "0.0000086%", "0.0000034%"
-    ]
-}
-st.subheader("📊 Powerball Winning Odds")
-st.dataframe(pd.DataFrame(odds_data))
+# Load CSV files
+white_df = pd.read_csv("white_ball_stats.csv")
+red_df = pd.read_csv("red_ball_stats.csv")
+odds_df = pd.read_csv("powerball_odds_table.csv")
 
-# 2. White Ball Probabilities
-white_df = pd.DataFrame({
-    "White Ball": list(range(1, 70)),
-    "Probability (%)": [round(100/69, 2)] * 69
-})
-st.subheader("⚪ White Ball Probabilities")
+# Display probability tables
+st.subheader("📊 White Ball Probability Table")
 st.dataframe(white_df)
 
-# 3. Red Ball Probabilities
-red_df = pd.DataFrame({
-    "Red Ball": list(range(1, 27)),
-    "Probability (%)": [round(100/26, 2)] * 26
-})
-st.subheader("🔴 Powerball (Red Ball) Probabilities")
+st.subheader("📕 Red Ball Probability Table")
 st.dataframe(red_df)
 
-# Input Form
-st.subheader("🎯 Calculate Your Odds")
-white_input = st.text_input("Enter 5 white balls (1–69) separated by commas")
-powerball_input = st.number_input("Enter Powerball (1–26)", min_value=1, max_value=26, step=1)
+st.subheader("🎲 Powerball Odds Table")
+st.dataframe(odds_df)
 
-if st.button("Calculate Winning Odds"):
-    st.success("Calculation logic coming soon — odds display only for now.")
+# Odds calculator
+st.markdown("---")
+st.subheader("🔢 Winning Odds Calculator")
+
+white_input = st.text_input("Enter 5 white balls (1–69) separated by commas")
+red_input = st.number_input("Enter Powerball (1–26)", min_value=1, max_value=26, value=1)
+calc = st.button("Calculate Winning Odds")
+
+def calculate_odds(white_balls, powerball):
+    white_balls = [int(x.strip()) for x in white_balls.split(",") if x.strip().isdigit()]
+    if len(white_balls) != 5:
+        return "Please enter exactly 5 unique white balls."
+    return "1 in 292,201,338 (0.00000034%) - National Powerball Jackpot Odds"
+
+if calc:
+    result = calculate_odds(white_input, red_input)
+    st.success(result)
