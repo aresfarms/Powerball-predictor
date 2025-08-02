@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 
 st.set_page_config(page_title="Chaos-Based Powerball Predictor", layout="centered")
-
 st.title("Chaos-Based Powerball Predictor")
 st.markdown("**(Friendly Odds)**")
 
@@ -20,6 +19,8 @@ def calculate_odds(white_balls, powerball):
 
     for (match, pb), prize, odds in zip(match_counts, prize_values, odds_values):
         friendly = f"1 in {int(odds):,} ({round(1/odds*100, 8)}%)"
+        if int(odds) == 292201338:
+            friendly += " – National Powerball Jackpot Odds: virtually zero chance of winning"
         odds_table.append({
             "White Balls Matched": match,
             "Powerball Matched": "Yes" if pb else "No",
@@ -27,30 +28,32 @@ def calculate_odds(white_balls, powerball):
             "Odds": friendly
         })
 
-    df = pd.DataFrame(odds_table)
+    # Match user input with match_counts
+    matched_white = len(set(white_balls).intersection(set(user_draws)))
+    matched_powerball = user_pb == powerball
+    result = next((entry for entry in odds_table if entry["White Balls Matched"] == matched_white and
+                   ((entry["Powerball Matched"] == "Yes") == matched_powerball)), None)
 
-    jackpot_odds = 1 / 292201338
-    jackpot_percent = round(jackpot_odds * 100, 8)
-
-    if jackpot_percent < 0.00001:
-        jackpot_message = "Virtually zero chance of winning the Jackpot (1 in 292,201,338)"
-    elif jackpot_percent > 50:
-        jackpot_message = f"High chance of jackpot win: {jackpot_percent:.2f}%"
-    else:
-        jackpot_message = f"Jackpot Odds: {jackpot_percent:.8f}% (~1 in 292,201,338)"
-
-    return df, jackpot_message, jackpot_percent
+    return odds_table, result["White Balls Matched"] if result else None, result["Prize"] if result else None
 
 if st.button("Calculate Winning Odds"):
     try:
-        white_balls = list(map(int, white_balls_input.split(",")))
-        results_table, jackpot_msg, _ = calculate_odds(white_balls, powerball_input)
+        user_draws = [int(x.strip()) for x in white_balls_input.split(",") if x.strip().isdigit()]
+        user_pb = int(powerball_input)
 
-        if results_table is not None:
-            st.success(jackpot_msg)
-            st.markdown("### Odds Breakdown")
-            st.dataframe(results_table, use_container_width=True)
+        odds_table, matched_white, prize = calculate_odds(user_draws, user_pb)
+
+        if odds_table is not None:
+            st.subheader("Odds Table")
+            st.table(pd.DataFrame(odds_table))
+
+            if prize == "Jackpot":
+                st.success("🎉 Congratulations! You’ve hit the Jackpot (hypothetically)!")
+            elif prize:
+                st.info(f"🎯 You matched with prize: {prize}")
+            else:
+                st.warning("🚫 Not a winning combination. Basically zero chance of winning.")
         else:
-            st.error("Invalid input. Please enter 5 unique white balls (1–69) and a Powerball (1–26).")
-    except:
-        st.error("Invalid input format. Make sure to enter numbers separated by commas.")
+            st.error("❗ Invalid numbers. Please enter 5 unique white balls from 1–69.")
+    except Exception as e:
+        st.error(f"❗ Error: {str(e)}")
